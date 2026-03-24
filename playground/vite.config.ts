@@ -5,6 +5,9 @@ import Unplugin from '../src/vite'
 export default defineConfig({
   plugins: [
     Inspect(),
-    Unplugin(),
+    Unplugin({
+      levels: ['log', 'info', 'warn', 'error'],
+      prefix: 'unplugin-console',
+    }),
   ],
 })
