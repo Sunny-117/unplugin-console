@@ -2,31 +2,30 @@ import type { LogLevel } from '../types'
 
 export const ENDPOINT = '/__unplugin_console'
 export const WS_EVENT = 'unplugin-console:log'
+export const REPORTER_GLOBAL = '__UNPLUGIN_CONSOLE_REPORT__'
 
 export function generateRuntimeCode(
   levels: LogLevel[],
   serverPort?: number,
   stackLevels: LogLevel[] = ['warn', 'error'],
   stackTraceDepth = 10,
+  useHmrChannel = true,
 ): string {
   return `
 ;(function() {
-  if (typeof console === 'undefined') return;
-
-  var _origLog = console.log;
-  var _origInfo = console.info;
-  var _origWarn = console.warn;
-  var _origError = console.error;
-  var _original = {
-    log: _origLog ? _origLog.bind(console) : function() {},
-    info: _origInfo ? _origInfo.bind(console) : function() {},
-    warn: _origWarn ? _origWarn.bind(console) : function() {},
-    error: _origError ? _origError.bind(console) : function() {},
-  };
+  var _global = typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof window !== 'undefined'
+      ? window
+      : typeof self !== 'undefined'
+        ? self
+        : undefined;
+  if (!_global) return;
 
   var _levels = ${JSON.stringify(levels)};
   var _stackLevels = ${JSON.stringify(stackLevels)};
   var _stackTraceDepth = ${stackTraceDepth};
+  var _useHmrChannel = ${JSON.stringify(useHmrChannel)};
   var _maxDepth = 3;
   var _maxArrayItems = 30;
   var _maxObjectKeys = 20;
@@ -89,6 +88,13 @@ export function generateRuntimeCode(
     }
   }
 
+  function _isEnabledLevel(level) {
+    for (var i = 0; i < _levels.length; i++) {
+      if (_levels[i] === level) return true;
+    }
+    return false;
+  }
+
   function _shouldCaptureStack(level) {
     for (var i = 0; i < _stackLevels.length; i++) {
       if (_stackLevels[i] === level) return true;
@@ -97,13 +103,14 @@ export function generateRuntimeCode(
   }
 
   function _sendToServer(payload) {
-    try {
-      // Prefer Vite HMR channel when available.
-      if (typeof __vite_import_meta_hot__ !== 'undefined' || (typeof import.meta !== 'undefined' && import.meta.hot && typeof import.meta.hot.send === 'function')) {
-        import.meta.hot.send('${WS_EVENT}', payload);
-        return;
-      }
-    } catch (e) {}
+    if (_useHmrChannel) {
+      try {
+        if (typeof import.meta !== 'undefined' && import.meta.hot && typeof import.meta.hot.send === 'function') {
+          import.meta.hot.send('${WS_EVENT}', payload);
+          return;
+        }
+      } catch (e) {}
+    }
 
     try {
       var data = JSON.stringify(payload);
@@ -125,42 +132,42 @@ export function generateRuntimeCode(
     } catch (e) {}
   }
 
-  function _intercept(level) {
-    console[level] = function() {
-      var args = Array.prototype.slice.call(arguments);
-      _original[level].apply(console, args);
+  _global['${REPORTER_GLOBAL}'] = function(level, args) {
+    if (!_isEnabledLevel(level)) return;
 
-      var serialized = [];
-      for (var i = 0; i < args.length; i++) {
-        serialized.push(_safeStringify(args[i]));
-      }
+    var safeArgs = Array.isArray(args) ? args : [];
+    var serialized = [];
+    for (var i = 0; i < safeArgs.length; i++) {
+      serialized.push(_safeStringify(safeArgs[i]));
+    }
 
-      var stack = '';
-      if (_shouldCaptureStack(level)) {
-        try {
-          throw new Error();
-        } catch (e) {
-          var stackLines = (e.stack || '').split('\\n').slice(2);
-          if (_stackTraceDepth >= 0 && stackLines.length > _stackTraceDepth) {
-            stackLines = stackLines.slice(0, _stackTraceDepth);
-          }
-          stack = stackLines.join('\\n');
+    var stack = '';
+    if (_shouldCaptureStack(level)) {
+      try {
+        throw new Error();
+      } catch (e) {
+        var stackLines = (e.stack || '')
+          .split('\\n')
+          .slice(2)
+          .filter(function(line) {
+            return line.indexOf('virtual:unplugin-console') === -1
+              && line.indexOf('__x00__virtual:unplugin-console') === -1;
+          });
+        if (_stackTraceDepth >= 0 && stackLines.length > _stackTraceDepth) {
+          stackLines = stackLines.slice(0, _stackTraceDepth);
         }
+        stack = stackLines.join('\\n');
       }
+    }
 
-      _sendToServer({
-        type: level,
-        args: serialized,
-        timestamp: Date.now(),
-        source: 'browser',
-        stack: stack,
-      });
-    };
-  }
-
-  for (var i = 0; i < _levels.length; i++) {
-    _intercept(_levels[i]);
-  }
+    _sendToServer({
+      type: level,
+      args: serialized,
+      timestamp: Date.now(),
+      source: 'browser',
+      stack: stack,
+    });
+  };
 })();
 `
 }

@@ -2,7 +2,7 @@ import type { UnpluginContextMeta, UnpluginOptions } from 'unplugin'
 import type { ConsolePayload, LogLevel } from '../src/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { printLog } from '../src/core/logger'
-import { ENDPOINT, generateRuntimeCode, WS_EVENT } from '../src/core/runtime'
+import { ENDPOINT, generateRuntimeCode, REPORTER_GLOBAL, WS_EVENT } from '../src/core/runtime'
 import { unpluginFactory } from '../src/index'
 
 const mockMeta: UnpluginContextMeta = {
@@ -54,12 +54,11 @@ describe('generateRuntimeCode', () => {
     expect(code).toContain('import.meta.hot.send')
   })
 
-  it('should contain console interception logic', () => {
+  it('should register a global reporter function', () => {
     const code = generateRuntimeCode(['log', 'info', 'warn', 'error'])
-    expect(code).toContain('console.log')
-    expect(code).toContain('console.info')
-    expect(code).toContain('console.warn')
-    expect(code).toContain('console.error')
+    expect(code).toContain(REPORTER_GLOBAL)
+    expect(code).toContain('_global')
+    expect(code).not.toContain('console[level] = function')
   })
 
   it('should contain safe stringify function', () => {
@@ -199,6 +198,7 @@ describe('unpluginFactory', () => {
       const result = load('\0virtual:unplugin-console')
       expect(result).toBeTruthy()
       expect(result).toContain('_safeStringify')
+      expect(result).toContain(REPORTER_GLOBAL)
     }
   })
 
@@ -225,8 +225,9 @@ describe('unpluginFactory', () => {
     const plugin = createPlugin({ enabled: true })
     const transformInclude = plugin.transformInclude as ((id: string) => boolean) | undefined
     if (transformInclude) {
-      expect(transformInclude('/project/src/utils.ts')).toBe(false)
+      expect(transformInclude('/project/src/utils.ts')).toBe(true)
       expect(transformInclude('/project/src/component.vue')).toBe(false)
+      expect(transformInclude('/project/node_modules/a.js')).toBe(false)
     }
   })
 
@@ -245,6 +246,27 @@ describe('unpluginFactory', () => {
       const result = transform('const x = 1', '/project/main.ts')
       expect(result?.code).toContain('import \'virtual:unplugin-console\'')
       expect(result?.code).toContain('const x = 1')
+    }
+  })
+
+  it('should instrument console calls via AST transform', () => {
+    const plugin = createPlugin({ enabled: true })
+    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
+    if (transform) {
+      const result = transform('console.log("hello", 1)', '/project/src/foo.ts')
+      expect(result?.code).toContain(REPORTER_GLOBAL)
+      expect(result?.code).toContain('console.log.apply')
+      expect(result?.code).toContain('import \'virtual:unplugin-console\'')
+    }
+  })
+
+  it('should respect configured levels in AST transform', () => {
+    const plugin = createPlugin({ enabled: true, levels: ['error'] })
+    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
+    if (transform) {
+      const result = transform('console.log("a"); console.error("b")', '/project/src/foo.ts')
+      expect(result?.code).toContain('console.log("a")')
+      expect(result?.code).toContain('console.error.apply')
     }
   })
 

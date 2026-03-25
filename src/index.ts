@@ -4,6 +4,7 @@ import type { ConsolePayload, LogLevel, Options } from './types'
 import process from 'node:process'
 import { createUnplugin } from 'unplugin'
 import { printLog } from './core/logger'
+import { instrumentConsoleCalls } from './core/instrument'
 import { ENDPOINT, generateRuntimeCode, WS_EVENT } from './core/runtime'
 import { createLogServer } from './core/server'
 
@@ -34,10 +35,19 @@ const DEFAULT_ENTRY_PATTERNS = [
 ]
 
 const BACKSLASH_RE = /\\/g
+const QUERY_HASH_RE = /[?#].*$/
+const SCRIPT_RE = /\.[cm]?[jt]sx?$/
 
 function isEntryFile(id: string, patterns: string[]): boolean {
-  const normalized = id.replace(BACKSLASH_RE, '/')
+  const normalized = id.replace(BACKSLASH_RE, '/').replace(QUERY_HASH_RE, '')
   return patterns.some(p => normalized.endsWith(p))
+}
+
+function isTransformableScript(id: string): boolean {
+  const normalized = id.replace(BACKSLASH_RE, '/').replace(QUERY_HASH_RE, '')
+  if (normalized.includes('/node_modules/'))
+    return false
+  return SCRIPT_RE.test(normalized)
 }
 
 function handlePostRequest(req: IncomingMessage, res: ServerResponse, prefix: string): void {
@@ -89,8 +99,13 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, m
     ? Math.max(0, Math.floor(stackTraceDepth))
     : 10
 
-  const runtimeCode = generateRuntimeCode(levels, serverPort, resolvedStackLevels, resolvedStackTraceDepth)
-  let injected = false
+  const runtimeCode = generateRuntimeCode(
+    levels,
+    serverPort,
+    resolvedStackLevels,
+    resolvedStackTraceDepth,
+    meta.framework === 'vite',
+  )
   let logServer: ReturnType<typeof createLogServer> | null = null
 
   return {
@@ -128,16 +143,31 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, m
     },
 
     transformInclude(id) {
-      if (injected)
+      if (id === RESOLVED_VIRTUAL_ID)
         return false
-      return isEntryFile(id, entry)
+      return isTransformableScript(id)
     },
 
-    transform(code, _id) {
-      if (injected)
+    transform(code, id) {
+      let nextCode = code
+      let changed = false
+
+      const instrumented = instrumentConsoleCalls(nextCode, id, levels)
+      if (instrumented) {
+        nextCode = instrumented
+        changed = true
+      }
+
+      const shouldInjectRuntime = isEntryFile(id, entry) || Boolean(instrumented)
+      if (shouldInjectRuntime && !nextCode.includes(VIRTUAL_MODULE_ID)) {
+        nextCode = `import '${VIRTUAL_MODULE_ID}';\n${nextCode}`
+        changed = true
+      }
+
+      if (!changed)
         return
-      injected = true
-      return { code: `import '${VIRTUAL_MODULE_ID}';\n${code}` }
+
+      return { code: nextCode }
     },
 
     // Vite-specific: use configureServer for HTTP middleware + HMR WebSocket

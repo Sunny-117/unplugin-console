@@ -9,6 +9,7 @@ Built with [unplugin](https://github.com/unjs/unplugin), supports **Vite / Webpa
 ## Features
 
 - **Real-time forwarding** — browser console output appears in your Node.js terminal instantly
+- **AST call-site injection** — keeps browser DevTools log links on your source files (no runtime console override)
 - **Vite HMR WebSocket** — zero-config, uses Vite's built-in WebSocket for optimal performance
 - **HTTP fallback** — works with any bundler via `fetch` / `XMLHttpRequest`
 - **Safe serialization** — handles circular references, `Error`, `Date`, `RegExp`, DOM elements, `BigInt`, `Symbol`
@@ -88,7 +89,7 @@ module.exports = {
 | `levels` | `('log' \| 'info' \| 'warn' \| 'error')[]` | `['log', 'info', 'warn', 'error']` | Log levels to capture |
 | `prefix` | `string` | `'unplugin-console'` | Custom prefix for terminal output |
 | `serverPort` | `number` | `8787` | Port for standalone HTTP log server |
-| `entry` | `string[]` | `['main.ts', 'main.js', 'index.ts', ...]` | Entry file patterns to inject runtime |
+| `entry` | `string[]` | `['main.ts', 'main.js', 'index.ts', ...]` | Entry file patterns to preload runtime helper |
 | `captureStack` | `boolean \| ('log' \| 'info' \| 'warn' \| 'error')[]` | `['warn', 'error']` | Controls which levels collect stack traces (`true` = all, `false` = none) |
 | `stackTraceDepth` | `number` | `10` | Maximum stack frames kept per log when stack capture is enabled |
 
@@ -129,10 +130,12 @@ Browser                          Dev Server (Node.js)
 └─────────────────┘
 ```
 
-1. **Runtime injection** — A virtual module (`virtual:unplugin-console`) is created and injected into entry files via `transform`
-2. **Console hijacking** — The runtime saves original `console` methods, then overrides them to both call the original and send a structured payload
+1. **AST instrumentation** — during `transform`, `console.log/info/warn/error(...)` calls are rewritten in-place to add reporting without overriding `console`
+2. **Runtime helper injection** — a virtual module (`virtual:unplugin-console`) is imported to register a global reporter function
 3. **Transport** — Vite uses HMR WebSocket (`import.meta.hot.send`); other bundlers fall back to HTTP POST (`/__unplugin_console`)
-4. **Terminal output** — The server receives the payload and prints it with ANSI color codes
+4. **Terminal output** — the server receives payloads and prints them with ANSI color codes
+
+Technical notes: [`docs/ast-instrumentation.md`](./docs/ast-instrumentation.md)
 
 ### Payload format
 

@@ -65,11 +65,11 @@
     "build": "tsdown",
     "dev": "tsdown -w",
     "lint": "eslint .",
-    "play": "npm -C playground/vite run dev",
-    "play:vite": "npm -C playground/vite run dev",
-    "play:rspack": "npm -C playground/rspack run dev",
-    "play:webpack": "npm -C playground/webpack run dev",
-    "prepublishOnly": "npm run build",
+    "play": "pnpm -C playground/vite run dev",
+    "play:vite": "pnpm -C playground/vite run dev",
+    "play:rspack": "pnpm -C playground/rspack run dev",
+    "play:webpack": "pnpm -C playground/webpack run dev",
+    "prepublishOnly": "pnpm run build",
     "release": "bumpp && pnpm publish",
     "start": "tsx src/index.ts",
     "test": "vitest"
@@ -87,6 +87,7 @@
     }
   },
   "dependencies": {
+    "oxc-parser": "^0.86.0",
     "unplugin": "^3.0.0"
   },
   "devDependencies": {
@@ -95,7 +96,7 @@
     "bumpp": "^11.0.1",
     "eslint": "^10.1.0",
     "nodemon": "^3.1.14",
-    "tsdown": "^0.21.4",
+    "tsdown": "^0.21.5",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.2",
