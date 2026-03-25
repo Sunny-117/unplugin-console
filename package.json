@@ -36,11 +36,6 @@
       "import": "./dist/esbuild.mjs",
       "require": "./dist/esbuild.cjs"
     },
-    "./farm": {
-      "types": "./dist/farm.d.mts",
-      "import": "./dist/farm.mjs",
-      "require": "./dist/farm.cjs"
-    },
     "./nuxt": {
       "types": "./dist/nuxt.d.mts",
       "import": "./dist/nuxt.mjs",
@@ -95,7 +90,6 @@
     "play:vite": "npm -C playground/vite run dev",
     "play:rspack": "npm -C playground/rspack run dev",
     "play:webpack": "npm -C playground/webpack run dev",
-    "play:farm": "npm -C playground/farm run dev",
     "play:rollup": "npm -C playground/rollup run dev",
     "play:esbuild": "npm -C playground/esbuild run dev",
     "prepublishOnly": "npm run build",
@@ -104,7 +98,6 @@
     "test": "vitest"
   },
   "peerDependencies": {
-    "@farmfe/core": ">=1",
     "@nuxt/kit": "^3",
     "@nuxt/schema": "^3",
     "esbuild": "*",
@@ -113,9 +106,6 @@
     "webpack": "^4 || ^5"
   },
   "peerDependenciesMeta": {
-    "@farmfe/core": {
-      "optional": true
-    },
     "@nuxt/kit": {
       "optional": true
     },

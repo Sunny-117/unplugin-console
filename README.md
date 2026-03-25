@@ -4,7 +4,7 @@
 
 A cross-bundler plugin that forwards browser `console.log / info / warn / error` to your dev-server terminal in real time.
 
-Built with [unplugin](https://github.com/unjs/unplugin), supports **Vite / Webpack / Rollup / esbuild / Nuxt / Astro / Farm / Rspack**.
+Built with [unplugin](https://github.com/unjs/unplugin), supports **Vite / Webpack / Rollup / esbuild / Nuxt / Astro / Rspack**.
 
 ## Features
 
