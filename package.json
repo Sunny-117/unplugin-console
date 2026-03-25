@@ -1,7 +1,7 @@
 {
   "name": "unplugin-console",
   "type": "module",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "packageManager": "pnpm@10.11.0",
   "description": "A cross-bundler plugin that forwards browser console.log / info / warn / error to your dev-server terminal in real time.",
   "license": "MIT",
