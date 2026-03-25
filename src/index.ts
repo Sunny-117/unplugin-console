@@ -2,9 +2,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { UnpluginFactory } from 'unplugin'
 import type { ConsolePayload, LogLevel, Options } from './types'
 import process from 'node:process'
+import MagicString from 'magic-string'
 import { createUnplugin } from 'unplugin'
 import { printLog } from './core/logger'
-import { instrumentConsoleCalls } from './core/instrument'
+import { collectConsoleCallReplacements } from './core/instrument'
 import { ENDPOINT, generateRuntimeCode, WS_EVENT } from './core/runtime'
 import { createLogServer } from './core/server'
 
@@ -149,25 +150,32 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, m
     },
 
     transform(code, id) {
-      let nextCode = code
-      let changed = false
+      const replacements = collectConsoleCallReplacements(code, id, levels)
+      const hasInstrumentation = replacements.length > 0
+      const shouldInjectRuntime = isEntryFile(id, entry) || hasInstrumentation
+      const hasRuntimeImport = code.includes(VIRTUAL_MODULE_ID)
 
-      const instrumented = instrumentConsoleCalls(nextCode, id, levels)
-      if (instrumented) {
-        nextCode = instrumented
-        changed = true
-      }
-
-      const shouldInjectRuntime = isEntryFile(id, entry) || Boolean(instrumented)
-      if (shouldInjectRuntime && !nextCode.includes(VIRTUAL_MODULE_ID)) {
-        nextCode = `import '${VIRTUAL_MODULE_ID}';\n${nextCode}`
-        changed = true
-      }
-
-      if (!changed)
+      if (!hasInstrumentation && (!shouldInjectRuntime || hasRuntimeImport))
         return
 
-      return { code: nextCode }
+      const s = new MagicString(code)
+
+      for (const replacement of replacements) {
+        s.overwrite(replacement.start, replacement.end, replacement.code)
+      }
+
+      if (shouldInjectRuntime && !hasRuntimeImport) {
+        s.prepend(`import '${VIRTUAL_MODULE_ID}';\n`)
+      }
+
+      return {
+        code: s.toString(),
+        map: s.generateMap({
+          hires: true,
+          source: id.replace(QUERY_HASH_RE, ''),
+          includeContent: true,
+        }),
+      }
     },
 
     // Vite-specific: use configureServer for HTTP middleware + HMR WebSocket

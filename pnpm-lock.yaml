@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      magic-string:
+        specifier: ^0.30.17
+        version: 0.30.21
       oxc-parser:
         specifier: ^0.86.0
         version: 0.86.0

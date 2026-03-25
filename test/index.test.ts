@@ -5,6 +5,11 @@ import { printLog } from '../src/core/logger'
 import { ENDPOINT, generateRuntimeCode, REPORTER_GLOBAL, WS_EVENT } from '../src/core/runtime'
 import { unpluginFactory } from '../src/index'
 
+interface TransformResult {
+  code: string
+  map?: unknown
+}
+
 const mockMeta: UnpluginContextMeta = {
   framework: 'vite',
 }
@@ -241,32 +246,35 @@ describe('unpluginFactory', () => {
 
   it('should inject virtual module import in transform', () => {
     const plugin = createPlugin({ enabled: true })
-    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
+    const transform = plugin.transform as ((code: string, id: string) => TransformResult | undefined) | undefined
     if (transform) {
       const result = transform('const x = 1', '/project/main.ts')
       expect(result?.code).toContain('import \'virtual:unplugin-console\'')
       expect(result?.code).toContain('const x = 1')
+      expect(result?.map).toBeTruthy()
     }
   })
 
   it('should instrument console calls via AST transform', () => {
     const plugin = createPlugin({ enabled: true })
-    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
+    const transform = plugin.transform as ((code: string, id: string) => TransformResult | undefined) | undefined
     if (transform) {
       const result = transform('console.log("hello", 1)', '/project/src/foo.ts')
       expect(result?.code).toContain(REPORTER_GLOBAL)
       expect(result?.code).toContain('console.log.apply')
       expect(result?.code).toContain('import \'virtual:unplugin-console\'')
+      expect(result?.map).toBeTruthy()
     }
   })
 
   it('should respect configured levels in AST transform', () => {
     const plugin = createPlugin({ enabled: true, levels: ['error'] })
-    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
+    const transform = plugin.transform as ((code: string, id: string) => TransformResult | undefined) | undefined
     if (transform) {
       const result = transform('console.log("a"); console.error("b")', '/project/src/foo.ts')
       expect(result?.code).toContain('console.log("a")')
       expect(result?.code).toContain('console.error.apply')
+      expect(result?.map).toBeTruthy()
     }
   })
 

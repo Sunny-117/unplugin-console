@@ -18,7 +18,7 @@ interface AstNode {
   [key: string]: unknown
 }
 
-interface Replacement {
+export interface Replacement {
   start: number
   end: number
   code: string
@@ -114,21 +114,41 @@ export function instrumentConsoleCalls(
   id: string,
   levels: LogLevel[],
 ): string | null {
-  if (!code.includes('console.'))
+  const replacements = collectConsoleCallReplacements(code, id, levels)
+  if (replacements.length === 0)
     return null
+
+  return applyReplacements(code, replacements)
+}
+
+function applyReplacements(code: string, replacements: Replacement[]): string {
+  let output = code
+  for (const replacement of replacements) {
+    output = output.slice(0, replacement.start) + replacement.code + output.slice(replacement.end)
+  }
+  return output
+}
+
+export function collectConsoleCallReplacements(
+  code: string,
+  id: string,
+  levels: LogLevel[],
+): Replacement[] {
+  if (!code.includes('console.'))
+    return []
 
   let parsed: ReturnType<typeof oxc.parseSync>
   try {
     parsed = oxc.parseSync(cleanId(id), code)
   }
   catch {
-    return null
+    return []
   }
 
   if (!parsed.program)
-    return null
+    return []
   if (Array.isArray(parsed.errors) && parsed.errors.length > 0)
-    return null
+    return []
 
   const enabledLevels = new Set(levels)
   const replacements: Replacement[] = []
@@ -149,15 +169,6 @@ export function instrumentConsoleCalls(
     return true
   })
 
-  if (replacements.length === 0)
-    return null
-
   replacements.sort((a, b) => b.start - a.start)
-
-  let output = code
-  for (const replacement of replacements) {
-    output = output.slice(0, replacement.start) + replacement.code + output.slice(replacement.end)
-  }
-
-  return output
+  return replacements
 }
