@@ -4,7 +4,7 @@
 
 A cross-bundler plugin that forwards browser `console.log / info / warn / error` to your dev-server terminal in real time.
 
-Built with [unplugin](https://github.com/unjs/unplugin), supports **Vite / Webpack / Rollup / esbuild / Nuxt / Astro / Rspack**.
+Built with [unplugin](https://github.com/unjs/unplugin), supports **Vite / Webpack / Rspack**.
 
 ## Features
 
@@ -65,51 +65,6 @@ module.exports = {
 <br></details>
 
 <details>
-<summary>Rollup</summary><br>
-
-```ts
-// rollup.config.js
-import UnpluginConsole from 'unplugin-console/rollup'
-
-export default {
-  plugins: [
-    UnpluginConsole(),
-  ],
-}
-```
-
-<br></details>
-
-<details>
-<summary>esbuild</summary><br>
-
-```ts
-// esbuild.config.js
-import { build } from 'esbuild'
-import UnpluginConsole from 'unplugin-console/esbuild'
-
-build({
-  plugins: [UnpluginConsole()],
-})
-```
-
-<br></details>
-
-<details>
-<summary>Nuxt</summary><br>
-
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  modules: [
-    ['unplugin-console/nuxt', { /* options */ }],
-  ],
-})
-```
-
-<br></details>
-
-<details>
 <summary>Vue CLI</summary><br>
 
 ```ts
@@ -125,22 +80,6 @@ module.exports = {
 
 <br></details>
 
-<details>
-<summary>Astro</summary><br>
-
-```ts
-// astro.config.mjs
-import UnpluginConsole from 'unplugin-console/astro'
-
-export default defineConfig({
-  integrations: [
-    UnpluginConsole(),
-  ],
-})
-```
-
-<br></details>
-
 ## Options
 
 | Option | Type | Default | Description |
@@ -148,7 +87,7 @@ export default defineConfig({
 | `enabled` | `boolean` | `true` in dev, `false` in prod | Enable / disable the plugin |
 | `levels` | `('log' \| 'info' \| 'warn' \| 'error')[]` | `['log', 'info', 'warn', 'error']` | Log levels to capture |
 | `prefix` | `string` | `'unplugin-console'` | Custom prefix for terminal output |
-| `serverPort` | `number` | `8787` | Port for standalone HTTP log server (Webpack / Rollup / esbuild) |
+| `serverPort` | `number` | `8787` | Port for standalone HTTP log server |
 | `entry` | `string[]` | `['main.ts', 'main.js', 'index.ts', ...]` | Entry file patterns to inject runtime |
 | `captureStack` | `boolean \| ('log' \| 'info' \| 'warn' \| 'error')[]` | `['warn', 'error']` | Controls which levels collect stack traces (`true` = all, `false` = none) |
 | `stackTraceDepth` | `number` | `10` | Maximum stack frames kept per log when stack capture is enabled |
@@ -219,7 +158,7 @@ pnpm build
 # Run tests
 pnpm test
 
-# Run playground
+# Run playground (Vite)
 pnpm play
 
 # Lint

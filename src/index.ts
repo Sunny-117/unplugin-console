@@ -97,7 +97,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, m
     name: 'unplugin-console',
 
     buildStart() {
-      // For Farm, Rollup, esbuild: start standalone log server in buildStart
+      // For non self-managed frameworks, start standalone log server in buildStart.
       // Vite/Webpack/Rspack manage their own server via framework-specific hooks
       if (!SELF_MANAGED_FRAMEWORKS.has(meta.framework)) {
         logServer = createLogServer(serverPort, prefix)

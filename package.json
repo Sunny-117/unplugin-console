@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.8",
   "packageManager": "pnpm@10.11.0",
-  "description": "",
+  "description": "A cross-bundler plugin that forwards browser console.log / info / warn / error to your dev-server terminal in real time.",
   "license": "MIT",
   "homepage": "https://github.com/Sunny-117/unplugin-console#readme",
   "repository": {
@@ -17,7 +17,6 @@
     "unplugin",
     "vite",
     "webpack",
-    "rollup",
     "transform"
   ],
   "exports": {
@@ -25,26 +24,6 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    },
-    "./astro": {
-      "types": "./dist/astro.d.mts",
-      "import": "./dist/astro.mjs",
-      "require": "./dist/astro.cjs"
-    },
-    "./esbuild": {
-      "types": "./dist/esbuild.d.mts",
-      "import": "./dist/esbuild.mjs",
-      "require": "./dist/esbuild.cjs"
-    },
-    "./nuxt": {
-      "types": "./dist/nuxt.d.mts",
-      "import": "./dist/nuxt.mjs",
-      "require": "./dist/nuxt.cjs"
-    },
-    "./rollup": {
-      "types": "./dist/rollup.d.mts",
-      "import": "./dist/rollup.mjs",
-      "require": "./dist/rollup.cjs"
     },
     "./rspack": {
       "types": "./dist/rspack.d.mts",
@@ -90,34 +69,16 @@
     "play:vite": "npm -C playground/vite run dev",
     "play:rspack": "npm -C playground/rspack run dev",
     "play:webpack": "npm -C playground/webpack run dev",
-    "play:rollup": "npm -C playground/rollup run dev",
-    "play:esbuild": "npm -C playground/esbuild run dev",
     "prepublishOnly": "npm run build",
     "release": "bumpp && pnpm publish",
     "start": "tsx src/index.ts",
     "test": "vitest"
   },
   "peerDependencies": {
-    "@nuxt/kit": "^3",
-    "@nuxt/schema": "^3",
-    "esbuild": "*",
-    "rollup": "^3",
     "vite": ">=3",
     "webpack": "^4 || ^5"
   },
   "peerDependenciesMeta": {
-    "@nuxt/kit": {
-      "optional": true
-    },
-    "@nuxt/schema": {
-      "optional": true
-    },
-    "esbuild": {
-      "optional": true
-    },
-    "rollup": {
-      "optional": true
-    },
     "vite": {
       "optional": true
     },
@@ -130,13 +91,10 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
-    "@nuxt/kit": "^4.4.2",
-    "@nuxt/schema": "^4.4.2",
     "@types/node": "^25.5.0",
     "bumpp": "^11.0.1",
     "eslint": "^10.1.0",
     "nodemon": "^3.1.14",
-    "rollup": "^4.60.0",
     "tsdown": "^0.21.4",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
