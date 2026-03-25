@@ -38,6 +38,12 @@ describe('generateRuntimeCode', () => {
     expect(code).toContain(WS_EVENT)
   })
 
+  it('should not rely on __vite__ global', () => {
+    const code = generateRuntimeCode(['log'])
+    expect(code).not.toContain('__vite__')
+    expect(code).toContain('import.meta.hot.send')
+  })
+
   it('should contain console interception logic', () => {
     const code = generateRuntimeCode(['log', 'info', 'warn', 'error'])
     expect(code).toContain('console.log')
