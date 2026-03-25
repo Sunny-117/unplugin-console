@@ -3,7 +3,12 @@ import type { LogLevel } from '../types'
 export const ENDPOINT = '/__unplugin_console'
 export const WS_EVENT = 'unplugin-console:log'
 
-export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): string {
+export function generateRuntimeCode(
+  levels: LogLevel[],
+  serverPort?: number,
+  stackLevels: LogLevel[] = ['warn', 'error'],
+  stackTraceDepth = 10,
+): string {
   return `
 ;(function() {
   if (typeof console === 'undefined') return;
@@ -20,11 +25,25 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
   };
 
   var _levels = ${JSON.stringify(levels)};
+  var _stackLevels = ${JSON.stringify(stackLevels)};
+  var _stackTraceDepth = ${stackTraceDepth};
+  var _maxDepth = 3;
+  var _maxArrayItems = 30;
+  var _maxObjectKeys = 20;
+  var _maxStringLength = 2000;
 
-  function _safeStringify(value, seen) {
+  function _clipString(value) {
+    if (typeof value !== 'string') return value;
+    if (value.length <= _maxStringLength) return value;
+    return value.slice(0, _maxStringLength) + '... (truncated ' + (value.length - _maxStringLength) + ' chars)';
+  }
+
+  function _safeStringify(value, seen, depth) {
     if (!seen) seen = [];
+    if (depth === undefined) depth = 0;
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return _clipString(value);
     if (typeof value === 'function') return 'function ' + (value.name || 'anonymous') + '()';
     if (typeof value === 'symbol') return value.toString();
     if (typeof value === 'bigint') return value.toString() + 'n';
@@ -39,6 +58,10 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
       return value.outerHTML ? value.outerHTML.slice(0, 200) : value.toString();
     }
 
+    if (depth >= _maxDepth) {
+      return Array.isArray(value) ? '[Array(' + value.length + ')]' : '[Object]';
+    }
+
     for (var i = 0; i < seen.length; i++) {
       if (seen[i] === value) return '[Circular]';
     }
@@ -47,23 +70,30 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
     try {
       if (Array.isArray(value)) {
         var arrItems = [];
-        for (var j = 0; j < Math.min(value.length, 100); j++) {
-          arrItems.push(_safeStringify(value[j], seen));
+        for (var j = 0; j < Math.min(value.length, _maxArrayItems); j++) {
+          arrItems.push(_safeStringify(value[j], seen, depth + 1));
         }
-        if (value.length > 100) arrItems.push('... (' + (value.length - 100) + ' more)');
+        if (value.length > _maxArrayItems) arrItems.push('... (' + (value.length - _maxArrayItems) + ' more)');
         return '[' + arrItems.join(', ') + ']';
       }
 
       var keys = Object.keys(value);
       var objItems = [];
-      for (var k = 0; k < Math.min(keys.length, 50); k++) {
-        objItems.push(keys[k] + ': ' + _safeStringify(value[keys[k]], seen));
+      for (var k = 0; k < Math.min(keys.length, _maxObjectKeys); k++) {
+        objItems.push(keys[k] + ': ' + _safeStringify(value[keys[k]], seen, depth + 1));
       }
-      if (keys.length > 50) objItems.push('... (' + (keys.length - 50) + ' more)');
+      if (keys.length > _maxObjectKeys) objItems.push('... (' + (keys.length - _maxObjectKeys) + ' more)');
       return '{' + objItems.join(', ') + '}';
     } catch (e) {
       return '[Object]';
     }
+  }
+
+  function _shouldCaptureStack(level) {
+    for (var i = 0; i < _stackLevels.length; i++) {
+      if (_stackLevels[i] === level) return true;
+    }
+    return false;
   }
 
   function _sendToServer(payload) {
@@ -106,10 +136,16 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
       }
 
       var stack = '';
-      try {
-        throw new Error();
-      } catch (e) {
-        stack = (e.stack || '').split('\\n').slice(2).join('\\n');
+      if (_shouldCaptureStack(level)) {
+        try {
+          throw new Error();
+        } catch (e) {
+          var stackLines = (e.stack || '').split('\\n').slice(2);
+          if (_stackTraceDepth >= 0 && stackLines.length > _stackTraceDepth) {
+            stackLines = stackLines.slice(0, _stackTraceDepth);
+          }
+          stack = stackLines.join('\\n');
+        }
       }
 
       _sendToServer({

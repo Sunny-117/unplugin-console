@@ -150,6 +150,8 @@ export default defineConfig({
 | `prefix` | `string` | `'unplugin-console'` | Custom prefix for terminal output |
 | `serverPort` | `number` | `8787` | Port for standalone HTTP log server (Webpack / Rollup / esbuild) |
 | `entry` | `string[]` | `['main.ts', 'main.js', 'index.ts', ...]` | Entry file patterns to inject runtime |
+| `captureStack` | `boolean \| ('log' \| 'info' \| 'warn' \| 'error')[]` | `['warn', 'error']` | Controls which levels collect stack traces (`true` = all, `false` = none) |
+| `stackTraceDepth` | `number` | `10` | Maximum stack frames kept per log when stack capture is enabled |
 
 ## Terminal Output
 

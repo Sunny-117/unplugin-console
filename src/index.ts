@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { UnpluginFactory } from 'unplugin'
-import type { ConsolePayload, Options } from './types'
+import type { ConsolePayload, LogLevel, Options } from './types'
 import process from 'node:process'
 import { createUnplugin } from 'unplugin'
 import { printLog } from './core/logger'
@@ -71,13 +71,25 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, m
     prefix = 'unplugin-console',
     serverPort = 8787,
     entry = DEFAULT_ENTRY_PATTERNS,
+    captureStack = ['warn', 'error'],
+    stackTraceDepth = 10,
   } = options || {}
 
   if (!enabled) {
     return { name: 'unplugin-console' }
   }
 
-  const runtimeCode = generateRuntimeCode(levels, serverPort)
+  const resolvedStackLevels: LogLevel[] = captureStack === true
+    ? [...levels]
+    : captureStack === false
+      ? []
+      : levels.filter(level => captureStack.includes(level))
+
+  const resolvedStackTraceDepth = Number.isFinite(stackTraceDepth)
+    ? Math.max(0, Math.floor(stackTraceDepth))
+    : 10
+
+  const runtimeCode = generateRuntimeCode(levels, serverPort, resolvedStackLevels, resolvedStackTraceDepth)
   let injected = false
   let logServer: ReturnType<typeof createLogServer> | null = null
 

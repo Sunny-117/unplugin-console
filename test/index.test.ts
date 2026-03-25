@@ -28,6 +28,16 @@ describe('generateRuntimeCode', () => {
     expect(code).toContain(JSON.stringify(['log', 'error']))
   })
 
+  it('should default stack capture to warn/error', () => {
+    const code = generateRuntimeCode(['log', 'warn', 'error'])
+    expect(code).toContain(JSON.stringify(['warn', 'error']))
+  })
+
+  it('should default stack trace depth to 10', () => {
+    const code = generateRuntimeCode(['log'])
+    expect(code).toContain('var _stackTraceDepth = 10')
+  })
+
   it('should include the endpoint', () => {
     const code = generateRuntimeCode(['log'])
     expect(code).toContain(ENDPOINT)
@@ -56,6 +66,7 @@ describe('generateRuntimeCode', () => {
     const code = generateRuntimeCode(['log'])
     expect(code).toContain('_safeStringify')
     expect(code).toContain('[Circular]')
+    expect(code).toContain('_maxDepth = 3')
   })
 
   it('should contain fetch fallback', () => {
@@ -243,6 +254,24 @@ describe('unpluginFactory', () => {
     if (load) {
       const code = load('\0virtual:unplugin-console')
       expect(code).toContain(JSON.stringify(['error']))
+    }
+  })
+
+  it('should disable stack capture when configured', () => {
+    const plugin = createPlugin({ enabled: true, captureStack: false })
+    const load = plugin.load as ((id: string) => string | undefined) | undefined
+    if (load) {
+      const code = load('\0virtual:unplugin-console')
+      expect(code).toContain('var _stackLevels = []')
+    }
+  })
+
+  it('should pass custom stack trace depth to runtime', () => {
+    const plugin = createPlugin({ enabled: true, stackTraceDepth: 3 })
+    const load = plugin.load as ((id: string) => string | undefined) | undefined
+    if (load) {
+      const code = load('\0virtual:unplugin-console')
+      expect(code).toContain('var _stackTraceDepth = 3')
     }
   })
 })

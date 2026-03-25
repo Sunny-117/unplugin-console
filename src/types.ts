@@ -30,6 +30,22 @@ export interface Options {
    * @default ['main.ts', 'main.js', 'main.tsx', 'main.jsx', 'index.ts', 'index.js', 'index.tsx', 'index.jsx']
    */
   entry?: string[]
+
+  /**
+   * Capture stack trace for selected log levels
+   * - `true`: capture for all enabled levels
+   * - `false`: disable stack capture
+   * - `LogLevel[]`: capture for specific levels
+   * @default ['warn', 'error']
+   */
+  captureStack?: boolean | LogLevel[]
+
+  /**
+   * Maximum captured stack frames per log
+   * Works only when stack capture is enabled
+   * @default 10
+   */
+  stackTraceDepth?: number
 }
 
 export interface ConsolePayload {
