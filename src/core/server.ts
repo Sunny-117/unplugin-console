@@ -42,7 +42,7 @@ export function createLogServer(port: number, prefix: string): http.Server {
     res.end()
   })
 
-  server.listen(port, () => {
+  server.listen(port, '0.0.0.0', () => {
     // eslint-disable-next-line no-console
     console.log(`[unplugin-console] Log server listening on http://localhost:${port}${ENDPOINT}`)
   })

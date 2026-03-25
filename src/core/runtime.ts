@@ -77,7 +77,9 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
 
     try {
       var data = JSON.stringify(payload);
-      var endpoint = ${serverPort ? `'http://localhost:${serverPort}${ENDPOINT}'` : `'${ENDPOINT}'`};
+      var endpoint = ${serverPort
+        ? `(typeof location !== 'undefined' ? location.protocol + '//' + location.hostname + ':${serverPort}${ENDPOINT}' : 'http://localhost:${serverPort}${ENDPOINT}')`
+        : `'${ENDPOINT}'`};
       if (typeof fetch !== 'undefined') {
         fetch(endpoint, {
           method: 'POST',
