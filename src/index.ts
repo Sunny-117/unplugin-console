@@ -74,7 +74,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _
     return { name: 'unplugin-console' }
   }
 
-  const runtimeCode = generateRuntimeCode(levels)
+  const runtimeCode = generateRuntimeCode(levels, serverPort)
   let injected = false
 
   return {
@@ -139,6 +139,24 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _
 
     // Webpack: create standalone log server in development
     webpack(compiler) {
+      if (compiler.options.mode === 'development' || !compiler.options.mode) {
+        let server: ReturnType<typeof createLogServer> | null = null
+        compiler.hooks.afterEnvironment.tap('unplugin-console', () => {
+          server = createLogServer(serverPort, prefix)
+        })
+        compiler.hooks.shutdown.tapAsync('unplugin-console', (callback) => {
+          if (server) {
+            server.close(() => callback())
+          }
+          else {
+            callback()
+          }
+        })
+      }
+    },
+
+    // Rspack: create standalone log server in development
+    rspack(compiler) {
       if (compiler.options.mode === 'development' || !compiler.options.mode) {
         let server: ReturnType<typeof createLogServer> | null = null
         compiler.hooks.afterEnvironment.tap('unplugin-console', () => {

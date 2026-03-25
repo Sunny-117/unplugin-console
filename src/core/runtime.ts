@@ -3,7 +3,7 @@ import type { LogLevel } from '../types'
 export const ENDPOINT = '/__unplugin_console'
 export const WS_EVENT = 'unplugin-console:log'
 
-export function generateRuntimeCode(levels: LogLevel[]): string {
+export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): string {
   return `
 ;(function() {
   if (typeof console === 'undefined') return;
@@ -76,15 +76,16 @@ export function generateRuntimeCode(levels: LogLevel[]): string {
 
     try {
       var data = JSON.stringify(payload);
+      var endpoint = ${serverPort ? `'http://localhost:${serverPort}${ENDPOINT}'` : `'${ENDPOINT}'`};
       if (typeof fetch !== 'undefined') {
-        fetch('${ENDPOINT}', {
+        fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: data,
         }).catch(function() {});
       } else if (typeof XMLHttpRequest !== 'undefined') {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '${ENDPOINT}', true);
+        xhr.open('POST', endpoint, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(data);
       }
