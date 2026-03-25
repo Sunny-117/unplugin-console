@@ -2,9 +2,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nodemon -w '../src/**/*.ts' -e .ts -x vite"
+    "dev": "vite"
   },
   "devDependencies": {
+    "unplugin-console": "workspace:*",
     "vite": "^8.0.2",
     "vite-plugin-inspect": "^11.3.3"
   }

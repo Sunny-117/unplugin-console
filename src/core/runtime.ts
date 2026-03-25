@@ -68,7 +68,8 @@ export function generateRuntimeCode(levels: LogLevel[], serverPort?: number): st
 
   function _sendToServer(payload) {
     try {
-      if (typeof __vite_import_meta_hot__ !== 'undefined' || (typeof import.meta !== 'undefined' && import.meta.hot)) {
+      // Only use Vite's HMR WebSocket - check for Vite-specific globals
+      if (typeof __vite_import_meta_hot__ !== 'undefined' || (typeof import.meta !== 'undefined' && import.meta.hot && typeof import.meta.hot.send === 'function' && typeof __vite__ !== 'undefined')) {
         import.meta.hot.send('${WS_EVENT}', payload);
         return;
       }

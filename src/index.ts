@@ -61,7 +61,10 @@ function handlePostRequest(req: IncomingMessage, res: ServerResponse, prefix: st
   })
 }
 
-export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _meta) => {
+// Frameworks that manage their own log server via compiler hooks
+const SELF_MANAGED_FRAMEWORKS = new Set(['vite', 'webpack', 'rspack'])
+
+export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, meta) => {
   const {
     enabled = process.env.NODE_ENV !== 'production',
     levels = ['log', 'info', 'warn', 'error'],
@@ -76,9 +79,25 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _
 
   const runtimeCode = generateRuntimeCode(levels, serverPort)
   let injected = false
+  let logServer: ReturnType<typeof createLogServer> | null = null
 
   return {
     name: 'unplugin-console',
+
+    buildStart() {
+      // For Farm, Rollup, esbuild: start standalone log server in buildStart
+      // Vite/Webpack/Rspack manage their own server via framework-specific hooks
+      if (!SELF_MANAGED_FRAMEWORKS.has(meta.framework)) {
+        logServer = createLogServer(serverPort, prefix)
+      }
+    },
+
+    buildEnd() {
+      if (logServer) {
+        logServer.close()
+        logServer = null
+      }
+    },
 
     resolveId(id) {
       if (id === VIRTUAL_MODULE_ID) {
@@ -106,7 +125,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _
       if (injected)
         return
       injected = true
-      return `import '${VIRTUAL_MODULE_ID}';\n${code}`
+      return { code: `import '${VIRTUAL_MODULE_ID}';\n${code}` }
     },
 
     // Vite-specific: use configureServer for HTTP middleware + HMR WebSocket
@@ -139,6 +158,28 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options, _
 
     // Webpack: create standalone log server in development
     webpack(compiler) {
+      // Register virtual: scheme handler so webpack doesn't throw UnhandledSchemeError
+      const NormalModule = compiler.webpack?.NormalModule ?? require('webpack').NormalModule
+      compiler.hooks.compilation.tap('unplugin-console', (compilation, { normalModuleFactory }) => {
+        normalModuleFactory.hooks.resolveForScheme
+          .for('virtual')
+          .tap('unplugin-console', (resourceData) => {
+            // Mark the resource so webpack knows it's handled
+            resourceData.path = resourceData.resource
+            resourceData.query = ''
+            resourceData.fragment = ''
+            return true
+          })
+
+        NormalModule.getCompilationHooks(compilation)
+          .readResourceForScheme.for('virtual')
+          .tap('unplugin-console', () => {
+            // Return the runtime code directly since webpack's scheme-based resolution
+            // bypasses unplugin's load hook
+            return Buffer.from(runtimeCode)
+          })
+      })
+
       if (compiler.options.mode === 'development' || !compiler.options.mode) {
         let server: ReturnType<typeof createLogServer> | null = null
         compiler.hooks.afterEnvironment.tap('unplugin-console', () => {

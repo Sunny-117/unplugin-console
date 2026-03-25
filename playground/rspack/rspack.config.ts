@@ -1,6 +1,6 @@
 import { defineConfig } from '@rspack/cli';
 import { rspack, type SwcLoaderOptions } from '@rspack/core';
-import Unplugin from '../src/rspack'
+import Unplugin from 'unplugin-console/rspack'
 
 // Target browsers, see: https://github.com/browserslist/browserslist
 const targets = ['last 2 versions', '> 0.2%', 'not dead', 'Firefox ESR'];
@@ -50,12 +50,16 @@ export default defineConfig({
           },
         ],
       },
+      {
+        test: /\.css$/,
+        type: 'css',
+      },
     ],
   },
   plugins: [
     new rspack.HtmlRspackPlugin({ template: './index.html' }),
     Unplugin({
-      serverPort: 8787, // standalone log server port (must differ from rspack dev server)
+      serverPort: 8787,
     }),
   ],
   optimization: {

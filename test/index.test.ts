@@ -223,11 +223,11 @@ describe('unpluginFactory', () => {
 
   it('should inject virtual module import in transform', () => {
     const plugin = createPlugin({ enabled: true })
-    const transform = plugin.transform as ((code: string, id: string) => string | undefined) | undefined
+    const transform = plugin.transform as ((code: string, id: string) => { code: string } | undefined) | undefined
     if (transform) {
       const result = transform('const x = 1', '/project/main.ts')
-      expect(result).toContain('import \'virtual:unplugin-console\'')
-      expect(result).toContain('const x = 1')
+      expect(result?.code).toContain('import \'virtual:unplugin-console\'')
+      expect(result?.code).toContain('const x = 1')
     }
   })
 

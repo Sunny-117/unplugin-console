@@ -1,7 +1,5 @@
 {
-  "name": "rspack-project",
   "private": true,
-  "version": "1.0.0",
   "scripts": {
     "dev": "rspack dev",
     "build": "rspack build",
@@ -10,6 +8,7 @@
   "devDependencies": {
     "@rspack/cli": "^1.7.10",
     "@rspack/core": "^1.7.10",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "unplugin-console": "workspace:*"
   }
 }

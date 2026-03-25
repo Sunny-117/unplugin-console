@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "unplugin-console": "workspace:*"
+  }
+}

@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import './style.css'
+
 // Test unplugin-console: these logs will appear in both browser console and terminal
 console.log('Hello from unplugin-console!')
 console.info('Info message', { key: 'value', nested: { a: 1 } })

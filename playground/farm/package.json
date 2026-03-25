@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "farm start"
+  },
+  "devDependencies": {
+    "@farmfe/cli": "^1.0.4",
+    "@farmfe/core": "^1.7.1",
+    "unplugin-console": "workspace:*"
+  }
+}

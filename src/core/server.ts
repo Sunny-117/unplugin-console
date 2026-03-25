@@ -47,5 +47,16 @@ export function createLogServer(port: number, prefix: string): http.Server {
     console.log(`[unplugin-console] Log server listening on http://localhost:${port}${ENDPOINT}`)
   })
 
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      // eslint-disable-next-line no-console
+      console.warn(`[unplugin-console] Port ${port} is already in use, log server skipped`)
+    }
+    else {
+      // eslint-disable-next-line no-console
+      console.error(`[unplugin-console] Log server error:`, err)
+    }
+  })
+
   return server
 }

@@ -23,47 +23,57 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     },
     "./astro": {
       "types": "./dist/astro.d.mts",
-      "import": "./dist/astro.mjs"
+      "import": "./dist/astro.mjs",
+      "require": "./dist/astro.cjs"
     },
     "./esbuild": {
       "types": "./dist/esbuild.d.mts",
-      "import": "./dist/esbuild.mjs"
+      "import": "./dist/esbuild.mjs",
+      "require": "./dist/esbuild.cjs"
     },
     "./farm": {
       "types": "./dist/farm.d.mts",
-      "import": "./dist/farm.mjs"
+      "import": "./dist/farm.mjs",
+      "require": "./dist/farm.cjs"
     },
     "./nuxt": {
       "types": "./dist/nuxt.d.mts",
-      "import": "./dist/nuxt.mjs"
+      "import": "./dist/nuxt.mjs",
+      "require": "./dist/nuxt.cjs"
     },
     "./rollup": {
       "types": "./dist/rollup.d.mts",
-      "import": "./dist/rollup.mjs"
+      "import": "./dist/rollup.mjs",
+      "require": "./dist/rollup.cjs"
     },
     "./rspack": {
       "types": "./dist/rspack.d.mts",
-      "import": "./dist/rspack.mjs"
+      "import": "./dist/rspack.mjs",
+      "require": "./dist/rspack.cjs"
     },
     "./types": {
       "types": "./dist/types.d.mts",
-      "import": "./dist/types.mjs"
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.cjs"
     },
     "./vite": {
       "types": "./dist/vite.d.mts",
-      "import": "./dist/vite.mjs"
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.cjs"
     },
     "./webpack": {
       "types": "./dist/webpack.d.mts",
-      "import": "./dist/webpack.mjs"
+      "import": "./dist/webpack.mjs",
+      "require": "./dist/webpack.cjs"
     },
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "typesVersions": {
@@ -81,7 +91,13 @@
     "build": "tsdown",
     "dev": "tsdown -w",
     "lint": "eslint .",
-    "play": "npm -C playground run dev",
+    "play": "npm -C playground/vite run dev",
+    "play:vite": "npm -C playground/vite run dev",
+    "play:rspack": "npm -C playground/rspack run dev",
+    "play:webpack": "npm -C playground/webpack run dev",
+    "play:farm": "npm -C playground/farm run dev",
+    "play:rollup": "npm -C playground/rollup run dev",
+    "play:esbuild": "npm -C playground/esbuild run dev",
     "prepublishOnly": "npm run build",
     "release": "bumpp && pnpm publish",
     "start": "tsx src/index.ts",
